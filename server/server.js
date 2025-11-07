@@ -4,12 +4,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path');
 
 // Import routes (ensure these files exist)
 const voteRoutes = require('./routes/vote');
 const resultRoutes = require('./routes/result');
-// const adminRoutes = require('./routes/admin'); // removed if missing
+// const adminRoutes = require('./routes/admin'); // removed because missing
 
 const app = express();
 
@@ -18,16 +17,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Routes
+// API Routes
 app.use('/vote', voteRoutes);
 app.use('/result', resultRoutes);
 // app.use('/admin', adminRoutes); // removed
-
-// Serve client build if frontend exists
-app.use(express.static(path.join(__dirname, '../client/build')));
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-});
 
 // MongoDB connection
 const mongoUri = process.env.MONGODB_URI;
@@ -51,8 +44,6 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-
-
 
 
 
