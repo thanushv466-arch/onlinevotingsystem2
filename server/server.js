@@ -6,10 +6,10 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 
-// Import routes (ensure these files exist in your project)
+// Import routes (ensure these files exist)
 const voteRoutes = require('./routes/vote');
 const resultRoutes = require('./routes/result');
-// const adminRoutes = require('./routes/admin'); // Removed if file missing
+// const adminRoutes = require('./routes/admin'); // removed if missing
 
 const app = express();
 
@@ -21,11 +21,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Routes
 app.use('/vote', voteRoutes);
 app.use('/result', resultRoutes);
-// app.use('/admin', adminRoutes); // Removed if file missing
+// app.use('/admin', adminRoutes); // removed
 
-// Optional: serve client build if using React front-end
+// Serve client build if frontend exists
 app.use(express.static(path.join(__dirname, '../client/build')));
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
 
@@ -51,6 +51,7 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
 
 
 
