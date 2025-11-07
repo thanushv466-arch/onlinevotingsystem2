@@ -1,65 +1,52 @@
 // server.js
-// ============================
-// ONLINE VOTING SYSTEM SERVER
-// ============================
+const express = require('express');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 
-// Only load dotenv for local development
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
-}
-
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const path = require("path");
+dotenv.config(); // Load .env file
 
 const app = express();
+const PORT = process.env.PORT || 10000;
 
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Routes
-const adminRoutes = require("./routes/admin");
-const voterRoutes = require("./routes/voter");
-const voteRoutes = require("./routes/vote");
-const resultRoutes = require("./routes/result");
-
-app.use("/api/admin", adminRoutes);
-app.use("/api/voter", voterRoutes);
-app.use("/api/vote", voteRoutes);
-app.use("/api/result", resultRoutes);
-
-// MongoDB connection
-const dbURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/onlinevotingsystem";
-
-if (!dbURI) {
-  console.error("❌ Error: MONGODB_URI is not defined!");
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error("❌ Error: MONGODB_URI is not defined in environment variables!");
   process.exit(1);
 }
 
-mongoose
-  .connect(dbURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
-    process.exit(1);
-  });
+mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("✅ MongoDB connected"))
+.catch((err) => {
+  console.error("❌ MongoDB connection error:", err);
+  process.exit(1);
+});
 
-// Serve client in production (optional if you have React frontend)
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/build")));
+// Load routes (only the ones you have)
+try {
+  const voteRoutes = require('./routes/vote');
+  app.use('/vote', voteRoutes);
+  console.log("✅ Route loaded: /vote");
+} catch (err) {
+  console.warn("⚠️ Route not found, skipping /vote");
+}
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client/build", "index.html"));
-  });
+try {
+  const resultRoutes = require('./routes/result');
+  app.use('/result', resultRoutes);
+  console.log("✅ Route loaded: /result");
+} catch (err) {
+  console.warn("⚠️ Route not found, skipping /result");
 }
 
 // Start server
-const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
