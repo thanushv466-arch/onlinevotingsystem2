@@ -1,38 +1,36 @@
-require('dotenv').config(); // load .env
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const Admin = require('./models/Admin'); // make sure this file exists
+require("dotenv").config();
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const Admin = require("./models/Admin");
 
-const seedAdmin = async () => {
+const MONGO_URI = process.env.MONGODB_URI;
+
+async function createAdmin() {
   try {
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected!');
+    await mongoose.connect(MONGO_URI);
+    console.log("✅ DB Connected");
 
-    // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email: 'admin@example.com' });
-    if (existingAdmin) {
-      console.log('Admin already exists:', existingAdmin);
-      return process.exit(0);
-    }
+    // Remove old admins
+    await Admin.deleteMany();
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const hashed = await bcrypt.hash("password123", 10);
 
-    // Create new admin
-    const admin = new Admin({
-      email: 'admin@example.com',
-      password: hashedPassword,
+    const admin = await Admin.create({
+      name: "Main Admin",
+      email: "admin@example.com",
+      password: hashed
     });
 
-    await admin.save();
-    console.log('Admin seeded:', admin);
-    process.exit(0);
+    console.log("🎉 Admin Created Successfully");
+    console.log("👉 Email: admin@example.com");
+    console.log("👉 Password: password123");
+
+    process.exit();
   } catch (err) {
-    console.error('Error seeding admin:', err);
+    console.error("❌ Error:", err);
     process.exit(1);
   }
-};
+}
 
-seedAdmin();
+createAdmin();
 
