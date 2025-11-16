@@ -1,43 +1,41 @@
 // server.js
-require('dotenv').config(); 
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
-// Routes
-const authRoutes = require('./routes/auth');   // <-- IMPORTANT
-const voteRoutes = require('./routes/vote');
-const resultRoutes = require('./routes/result');
+// IMPORT ROUTES
+const authRoutes = require("./routes/auth");
+const electionRoutes = require("./routes/election");
+const candidateRoutes = require("./routes/candidate");
+const voterRoutes = require("./routes/voter");
+const voteRoutes = require("./routes/vote");
+const resultRoutes = require("./routes/result");
 
 const app = express();
 
-// Middleware
+// MIDDLEWARES
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// API Routes
-app.use('/api/auth', authRoutes);              // <-- IMPORTANT
-app.use('/api/vote', voteRoutes);
-app.use('/api/result', resultRoutes);
+// API ROUTE MAPPING (FINAL)
+app.use("/api/auth", authRoutes);             // Admin login
+app.use("/api/election", electionRoutes);     // Create + list elections
+app.use("/api/candidate", candidateRoutes);   // Add candidates
+app.use("/api/voter", voterRoutes);           // Add voters
+app.use("/api/vote", voteRoutes);             // Voting
+app.use("/api/result", resultRoutes);         // Election results
 
-// MongoDB connection
-const mongoUri = process.env.MONGODB_URI;
+// CONNECT MONGO DB
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.log("❌ DB Error:", err));
 
-if (!mongoUri) {
-  console.error('❌ MONGODB_URI is not defined in env variables!');
-} else {
-  mongoose.connect(mongoUri)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch(err => console.error('❌ MongoDB connection error:', err));
-}
-
-// Start server
+// START SERVER
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log("🚀 Server running on port ${PORT}");
-});
+app.listen(PORT, () => console.log("🚀 Server is running on port ${PORT}"));
 
 
 
