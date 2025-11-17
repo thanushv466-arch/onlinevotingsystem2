@@ -8,7 +8,7 @@ const MONGO_URI = process.env.MONGODB_URI;
 async function createAdmin() {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log("✅ DB Connected");
+    console.log("✅ MongoSDB Connected");
 
     // Remove old admins
     await Admin.deleteMany();

@@ -1,10 +1,9 @@
-const mongoose = require('mongoose');
-
-const electionSchema = new mongoose.Schema({
-  title: String,
-  startDate: Date,
-  endDate: Date,
-  candidates: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Candidate' }],
+const mongoose = require("mongoose");
+const schema = new mongoose.Schema({
+  name: String,
+  date: Date,
+  type: String,
+  constituency: String,
+  status: { type: String, default: "CREATED" }
 });
-
-module.exports = mongoose.model('Election', electionSchema);
+module.exports = mongoose.model("Election", schema);

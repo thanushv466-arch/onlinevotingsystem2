@@ -1,25 +1,22 @@
-const router = require('express').Router();
-const bcrypt = require('bcryptjs');
-const Voter = require('../models/Voter');
+const router = require("express").Router();
+const Voter = require("../models/Voter");
 
-// Register voter
-router.post('/register', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const hashed = await bcrypt.hash(req.body.password, 10);
-    const voter = await Voter.create({ ...req.body, password: hashed });
-    res.json(voter);
+    const v = await Voter.create(req.body);
+    res.json(v);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ msg: err.message });
   }
 });
 
-// Login voter
-router.post('/login', async (req, res) => {
-  const voter = await Voter.findOne({ email: req.body.email });
-  if (!voter) return res.status(400).json({ msg: 'Invalid credentials' });
-  const match = await bcrypt.compare(req.body.password, voter.password);
-  if (!match) return res.status(400).json({ msg: 'Invalid credentials' });
-  res.json(voter);
+router.get("/:electionId", async (req, res) => {
+  try {
+    const list = await Voter.find({ electionId: req.params.electionId });
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
 });
 
-module.exports = router;
+module.exports = router;

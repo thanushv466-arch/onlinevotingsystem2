@@ -1,10 +1,8 @@
-const mongoose = require('mongoose');
-
-const voterSchema = new mongoose.Schema({
+const mongoose = require("mongoose");
+const schema = new mongoose.Schema({
   name: String,
   email: String,
-  password: String,
-  hasVoted: { type: Boolean, default: false },
+  voterId: String,
+  electionId: { type: mongoose.Schema.Types.ObjectId, ref: "Election" }
 });
-
-module.exports = mongoose.model('Voter', voterSchema);
+module.exports = mongoose.model("Voter", schema);

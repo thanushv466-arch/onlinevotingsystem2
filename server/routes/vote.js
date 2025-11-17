@@ -1,16 +1,16 @@
-const router = require('express').Router();
-const Candidate = require('../models/Candidate');
+const router = require("express").Router();
+const Vote = require("../models/Vote");
 
-// Create candidate
-router.post('/', async (req, res) => {
-  const candidate = await Candidate.create(req.body);
-  res.json(candidate);
+router.post("/", async (req, res) => {
+  try {
+    // body: { electionId, candidateId, voterId }
+    const existing = await Vote.findOne({ electionId: req.body.electionId, voterId: req.body.voterId });
+    if (existing) return res.status(400).json({ msg: "Already voted" });
+    const v = await Vote.create(req.body);
+    res.json(v);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
 });
 
-// Get all candidates
-router.get('/', async (req, res) => {
-  const candidates = await Candidate.find().populate('party election');
-  res.json(candidates);
-});
-
-module.exports = router;
+module.exports = router;
