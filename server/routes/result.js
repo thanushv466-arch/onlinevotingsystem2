@@ -1,58 +1,75 @@
 const router = require("express").Router();
 const Vote = require("../models/Vote");
+const Candidate = require("../models/Candidate");
+const Election = require("../models/Election");
 
-// GET RESULTS + WINNER
-router.get("/:electionId", async (req, res) => {
-  try {
-    const electionId = req.params.electionId;
+// GET RESULTS
+router.get("/:id", async (req, res) => {
+  const electionId = req.params.id;
 
-    // fetch all votes for the election
-    const votes = await Vote.find({ election: electionId })
-      .populate("candidate")
-      .populate("voter");
+  const votes = await Vote.find({ election: electionId }).populate("candidate");
+  if (!votes.length) return res.json({ results: [], winner: null });
 
-    if (votes.length === 0) {
-      return res.json({
-        winner: null,
-        results: [],
-        totalVotes: 0,
-        msg: "No votes yet"
-      });
-    }
+  // Count votes
+  const tally = {};
+  votes.forEach(v => {
+    const cid = v.candidate._id.toString();
+    tally[cid] = (tally[cid] || 0) + 1;
+  });
 
-    // count votes per candidate
-    const voteCount = {};
+  // Build result list
+  const candidates = await Candidate.find({ election: electionId });
 
-    votes.forEach(v => {
-      const cId = v.candidate._id.toString();
+  const results = candidates.map(c => ({
+    _id: c._id,
+    name: c.name,
+    party: c.party,
+    votes: tally[c._id] || 0
+  }));
 
-      if (!voteCount[cId]) {
-        voteCount[cId] = {
-          candidate: v.candidate,
-          count: 0
-        };
-      }
+  // Sort highest votes first
+  results.sort((a, b) => b.votes - a.votes);
 
-      voteCount[cId].count++;
-    });
+  // Winner (top candidate)
+  const winner = results[0];
 
-    // convert to array & sort by votes
-    const sortedResults = Object.values(voteCount).sort(
-      (a, b) => b.count - a.count
-    );
+  res.json({ results, winner });
+});
 
-    // winner is first item in sorted list
-    const winner = sortedResults[0];
+// DECLARE WINNER
+router.post("/declare/:id", async (req, res) => {
+  const electionId = req.params.id;
 
-    res.json({
-      winner,
-      results: sortedResults,
-      totalVotes: votes.length
-    });
+  const votes = await Vote.find({ election: electionId }).populate("candidate");
+  if (!votes.length)
+    return res.status(400).json({ msg: "No votes to declare winner" });
 
-  } catch (err) {
-    res.status(500).json({ msg: "Error loading results", err });
-  }
+  const tally = {};
+  votes.forEach(v => {
+    const cid = v.candidate._id.toString();
+    tally[cid] = (tally[cid] || 0) + 1;
+  });
+
+  const candidates = await Candidate.find({ election: electionId });
+
+  const results = candidates.map(c => ({
+    _id: c._id,
+    name: c.name,
+    party: c.party,
+    votes: tally[c._id] || 0
+  }));
+
+  results.sort((a, b) => b.votes - a.votes);
+
+  const winner = results[0];
+
+  // Save in Election collection
+  await Election.findByIdAndUpdate(electionId, {
+    winner: winner._id,
+    status: "Completed"
+  });
+
+  res.json({ msg: "Winner declared successfully!", winner });
 });
 
 module.exports = router;
