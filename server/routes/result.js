@@ -1,15 +1,17 @@
 const router = require("express").Router();
 const Vote = require("../models/Vote");
 
+// GET RESULTS FOR AN ELECTION
 router.get("/:electionId", async (req, res) => {
   try {
-    const result = await Vote.aggregate([
-      { $match: { electionId: require("mongoose").Types.ObjectId(req.params.electionId) } },
-      { $group: { _id: "$candidateId", votes: { $sum: 1 } } }
+    const results = await Vote.aggregate([
+      { $match: { election: require("mongoose").Types.ObjectId(req.params.electionId) }},
+      { $group: { _id: "$candidate", votes: { $sum: 1 } } }
     ]);
-    res.json(result);
+
+    res.json(results);
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    res.status(400).json({ msg: "Error fetching results", err });
   }
 });
 
