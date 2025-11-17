@@ -1,12 +1,10 @@
 const mongoose = require("mongoose");
 
-const schema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: false },
-  password: { type: String },          // hashed password stored on register
-  hasVoted: { type: Boolean, default: false },
-  // use "election" as ObjectId field (matches backend routes and frontend)
+const VoterSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
   election: { type: mongoose.Schema.Types.ObjectId, ref: "Election" }
 });
 
-module.exports = mongoose.model("Voter", schema);
+module.exports = mongoose.model("Voter", VoterSchema);

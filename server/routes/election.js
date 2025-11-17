@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const Election = require("../models/Election");
 
+// CREATE ELECTION
 router.post("/", async (req, res) => {
   try {
     const election = await Election.create(req.body);
@@ -10,6 +11,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// LIST ELECTIONS
 router.get("/", async (req, res) => {
   try {
     const list = await Election.find();

@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
 
-const schema = new mongoose.Schema({
-  name: { type: String, required: true },
-  party: { type: String },
-  // use field name "election" (ObjectId) — this matches backend queries & frontend POSTs
-  election: { type: mongoose.Schema.Types.ObjectId, ref: "Election", required: true }
+const CandidateSchema = new mongoose.Schema({
+  name: String,
+  party: String,
+  election: { type: mongoose.Schema.Types.ObjectId, ref: "Election" }
 });
 
-module.exports = mongoose.model("Candidate", schema);
+module.exports = mongoose.model("Candidate", CandidateSchema);

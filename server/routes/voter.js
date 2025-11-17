@@ -16,32 +16,30 @@ router.post("/", async (req, res) => {
 
     res.json(voter);
   } catch (err) {
-    res.status(400).json({ msg: "Voter creation failed", err: err.message });
+    res.status(400).json({ msg: "Voter creation failed", err });
   }
 });
 
-// LOGIN VOTER
+// LOGIN
 router.post("/login", async (req, res) => {
-  try {
-    const voter = await Voter.findOne({ email: req.body.email });
-    if (!voter) return res.status(400).json({ msg: "Voter not found" });
+  const voter = await Voter.findOne({ email: req.body.email });
 
-    const match = await bcrypt.compare(req.body.password, voter.password);
-    if (!match) return res.status(400).json({ msg: "Wrong password" });
+  if (!voter) return res.status(400).json({ msg: "Voter not found" });
 
-    res.json(voter);
-  } catch (err) {
-    res.status(500).json({ msg: "Server error", err: err.message });
-  }
+  const match = await bcrypt.compare(req.body.password, voter.password);
+
+  if (!match) return res.status(400).json({ msg: "Wrong password" });
+
+  res.json(voter);
 });
 
-// GET VOTERS BY ELECTION (required by frontend)
+// LIST VOTERS BY ELECTION
 router.get("/:electionId", async (req, res) => {
   try {
-    const voters = await Voter.find({ election: req.params.electionId });
-    res.json(voters);
+    const list = await Voter.find({ election: req.params.electionId });
+    res.json(list);
   } catch (err) {
-    res.status(400).json({ msg: "Error fetching voters", err: err.message });
+    res.status(400).json({ msg: "Error loading voters" });
   }
 });
 

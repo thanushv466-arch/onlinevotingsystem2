@@ -1,27 +1,32 @@
 const router = require("express").Router();
 const Vote = require("../models/Vote");
-const Voter = require("../models/Voter");
 
 // CAST VOTE
 router.post("/", async (req, res) => {
   try {
-    const voter = await Voter.findById(req.body.voter);
+    const { election, candidate, voter } = req.body;
 
-    if (voter.hasVoted)
-      return res.status(400).json({ msg: "Voter already voted!" });
+    const exists = await Vote.findOne({ election, voter });
+    if (exists)
+      return res.status(400).json({ msg: "You already voted!" });
 
-    await Vote.create({
-      voter: req.body.voter,
-      candidate: req.body.candidate,
-      election: req.body.election,
-    });
-
-    voter.hasVoted = true;
-    await voter.save();
-
-    res.json({ msg: "Vote submitted successfully" });
+    const vote = await Vote.create({ election, candidate, voter });
+    res.json({ msg: "Vote saved", vote });
   } catch (err) {
-    res.status(400).json({ msg: "Vote failed", err });
+    res.status(400).json({ msg: "Vote error", err });
+  }
+});
+
+// RESULTS
+router.get("/:electionId", async (req, res) => {
+  try {
+    const votes = await Vote.find({ election: req.params.electionId })
+      .populate("candidate")
+      .populate("voter");
+
+    res.json(votes);
+  } catch (err) {
+    res.status(400).json({ msg: "Results error", err });
   }
 });
 
