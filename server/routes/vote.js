@@ -1,30 +1,48 @@
 const router = require("express").Router();
 const Vote = require("../models/Vote");
 
-// CAST VOTE
+// CAST VOTE - accepts ANY field name from frontend
 router.post("/", async (req, res) => {
   try {
-    const { election, candidate, voter } = req.body;
+    // ACCEPT ALL POSSIBLE NAMES
+    const election =
+      req.body.election ||
+      req.body.electionId ||
+      req.body.election_id;
 
-    console.log("Incoming vote payload:", req.body);
+    const candidate =
+      req.body.candidate ||
+      req.body.candidateId ||
+      req.body.candidate_id;
 
-    // Prevent double vote
-    const exists = await Vote.findOne({ election, voter });
-    if (exists) {
-      return res.status(400).json({ msg: "You already voted" });
+    const voter =
+      req.body.voter ||
+      req.body.voterId ||
+      req.body.voter_id ||
+      req.body.voterid;
+
+    console.log("✔ FINAL VOTE PAYLOAD:", { election, candidate, voter });
+
+    // VALIDATION
+    if (!election || !candidate || !voter) {
+      return res.status(400).json({
+        msg: "Missing data (election, candidate, voter)",
+        received: req.body
+      });
     }
 
-    const vote = await Vote.create({
-      election,
-      candidate,
-      voter
-    });
+    // PREVENT DOUBLE VOTE
+    const exists = await Vote.findOne({ election, voter });
+    if (exists) return res.status(400).json({ msg: "You already voted" });
 
-    res.json({ msg: "Vote saved successfully", vote });
+    // SAVE VOTE
+    const vote = await Vote.create({ election, candidate, voter });
+
+    res.json({ msg: "Vote saved", vote });
 
   } catch (err) {
-    console.log("Vote error:", err);
-    res.status(400).json({ msg: "Vote error", err });
+    console.log("❌ VOTE ERROR:", err);
+    res.status(500).json({ msg: "Server vote error", err });
   }
 });
 
