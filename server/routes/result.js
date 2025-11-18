@@ -1,75 +1,82 @@
 const router = require("express").Router();
 const Vote = require("../models/Vote");
 const Candidate = require("../models/Candidate");
-const Election = require("../models/Election");
+const Result = require("../models/Result");
 
-// GET RESULTS
+// ⿡ Get LIVE results (not saved)
 router.get("/:id", async (req, res) => {
   const electionId = req.params.id;
+  const votes = await Vote.find({ election: electionId });
 
-  const votes = await Vote.find({ election: electionId }).populate("candidate");
-  if (!votes.length) return res.json({ results: [], winner: null });
+  if (votes.length === 0) return res.json([]);
 
-  // Count votes
-  const tally = {};
-  votes.forEach(v => {
-    const cid = v.candidate._id.toString();
-    tally[cid] = (tally[cid] || 0) + 1;
-  });
+  const map = {};
+  for (let v of votes) {
+    const cid = v.candidate.toString();
+    map[cid] = (map[cid] || 0) + 1;
+  }
 
-  // Build result list
-  const candidates = await Candidate.find({ election: electionId });
-
-  const results = candidates.map(c => ({
-    _id: c._id,
-    name: c.name,
-    party: c.party,
-    votes: tally[c._id] || 0
-  }));
-
-  // Sort highest votes first
-  results.sort((a, b) => b.votes - a.votes);
-
-  // Winner (top candidate)
-  const winner = results[0];
-
-  res.json({ results, winner });
+  const resultArray = [];
+  for (let cid of Object.keys(map)) {
+    const candidate = await Candidate.findById(cid);
+    resultArray.push({
+      candidateId: cid,
+      candidateName: candidate.name,
+      count: map[cid]
+    });
+  }
+ res.json(resultArray);
 });
 
-// DECLARE WINNER
+// ⿢ Declare winner + save result to DB
 router.post("/declare/:id", async (req, res) => {
   const electionId = req.params.id;
 
-  const votes = await Vote.find({ election: electionId }).populate("candidate");
-  if (!votes.length)
-    return res.status(400).json({ msg: "No votes to declare winner" });
+  const exists = await Result.findOne({ election: electionId });
+  if (exists)
+    return res.status(400).json({ msg: "Result already declared" });
 
-  const tally = {};
-  votes.forEach(v => {
-    const cid = v.candidate._id.toString();
-    tally[cid] = (tally[cid] || 0) + 1;
+  const votes = await Vote.find({ election: electionId });
+  if (votes.length === 0)
+    return res.status(400).json({ msg: "No votes to declare" });
+
+  const map = {};
+  for (let v of votes) {
+    const cid = v.candidate.toString();
+    map[cid] = (map[cid] || 0) + 1;
+  }
+
+  let winner = "";
+  let maxVotes = -1;
+  const results = [];
+
+  for (let cid of Object.keys(map)) {
+    const candidate = await Candidate.findById(cid);
+    results.push({
+      candidateName: candidate.name,
+      count: map[cid]
+    });
+
+    if (map[cid] > maxVotes) {
+      maxVotes = map[cid];
+      winner = candidate.name;
+    }
+  }
+const saved = await Result.create({
+    election: electionId,
+    winner,
+    results,
+    declaredAt: new Date()
   });
 
-  const candidates = await Candidate.find({ election: electionId });
+  res.json(saved);
+});
 
-  const results = candidates.map(c => ({
-    _id: c._id,
-    name: c.name,
-    party: c.party,
-    votes: tally[c._id] || 0
-  }));
-
-  results.sort((a, b) => b.votes - a.votes);
-
-  const winner = results[0];
-
-  // Save in Election collection
-  await Election.findByIdAndUpdate(electionId, {
-    winner: winner._id,
-    status: "Completed"
-  });
-
-  res.json({ msg: "Winner declared successfully!", winner });
+// ⿣ Fetch SAVED result
+router.get("/saved/:id", async (req, res) => {
+  const saved = await Result.findOne({ election: req.params.id });
+  if (!saved) return res.status(404).json({ msg: "No saved result" });
+  res.json(saved);
 });
 
 module.exports = router;
